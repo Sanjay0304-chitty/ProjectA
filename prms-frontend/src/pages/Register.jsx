@@ -9,6 +9,10 @@ import {
   UserPlus,
 } from 'lucide-react'
 
+function Empty() {
+    return null;
+}
+
 function Register() {
   const navigate = useNavigate()
 
