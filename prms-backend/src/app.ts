@@ -1,66 +1,83 @@
-import express from "express";
-import cors from "cors";
-import { initializeApp, applicationDefault, getApps } from "firebase-admin/app";
-import { getAuth } from "firebase-admin/auth";
+import express from 'express';
+import cors from 'cors';
+import helmet from 'helmet';
+import { initializeApp, getApps } from 'firebase-admin/app';
+import { getAuth } from 'firebase-admin/auth';
+import { env } from './config';
+import { prisma } from './db';
+import { requestLogger } from './middleware/logging';
+import { apiLimiter } from './middleware/rateLimit';
+import { errorHandler } from './middleware/errorHandler';
+import authRoutes from './modules/auth/routes_auth';
+import userRoutes from './modules/user/routes_user';
+import propertyRoutes from './modules/property/routes_property';
+import searchRoutes from './modules/search/routes_search';
+import bookingRoutes from './modules/booking/routes_booking';
+import paymentRoutes from './modules/payment/routes_payment';
+import maintenanceRoutes from './modules/maintenance/routes_maintenance';
+import communicationRoutes from './modules/communication/routes_communication';
+import adminRoutes from './modules/admin/routes_admin';
+import reportingRoutes from './modules/reporting/routes_reporting';
 
-// Initialize Firebase if not already initialized (firebase_auth.ts may have done it first)
+// Initialize Firebase if possible
 if (getApps().length === 0) {
-  initializeApp({
-    credential: process.env.GCP_SA_KEY
-      ? JSON.parse(process.env.GCP_SA_KEY)
-      : applicationDefault(),
-  });
+  try {
+    initializeApp({
+      credential: env.GCP_SA_KEY ? JSON.parse(env.GCP_SA_KEY) : { projectId: 'prms-local' },
+    });
+  } catch {
+    console.log('[Firebase] Running without credential (local mode)');
+  }
 }
 
 const app = express();
 const router = express.Router();
+const PORT = env.PORT;
 
-// Middleware
+app.use(helmet());
 app.use(cors());
 app.use(express.json());
+app.use(requestLogger);
 
-// Healthcheck
-app.get("/health", (req, res) => {
-  res.status(200).json({ health: "ok" });
+app.get('/health', async (req, res) => {
+  try {
+    await prisma.$queryRaw`SELECT 1`;
+    res.status(200).json({ health: 'ok', timestamp: new Date().toISOString(), environment: env.NODE_ENV, db: 'connected' });
+  } catch (err) {
+    res.status(503).json({ health: 'degraded', timestamp: new Date().toISOString(), db: 'unreachable', error: (err as Error).message });
+  }
 });
 
-app.get("/", (req, res) => {
-    res.json({
-        app: "PRMS Backend",
-        version: "1.0.0",
-        status: "running"
-    });
+app.get('/', (req, res) => {
+  res.json({ app: 'PRMS Backend', version: '1.0.0', status: 'running', documentation: '/health' });
 });
 
-// Auth route
-router.post("/auth/verify", async (req, res) => {
+router.post('/auth/verify', async (req, res) => {
   try {
     const { token } = req.body;
-    
-    if (!token) {
-      return res.status(401).json({
-        error: "Missing Firebase token"
-      });
-    }
-    
+    if (!token) return res.status(401).json({ error: 'Missing Firebase token' });
     const decodedToken = await getAuth().verifyIdToken(token);
-    res.json({
-      userId: decodedToken.uid,
-      email: decodedToken.email,
-      name: decodedToken.name
-    });
-  }
-  catch (error) {
-    console.error("Auth error:", error);
-    res.status(401).json({
-      error: "Invalid Firebase token"
-    });
-  }
+    res.json({ userId: decodedToken.uid, email: decodedToken.email, name: decodedToken.name });
+  } catch (error) { res.status(401).json({ error: 'Invalid Firebase token' }); }
 });
+
+router.use(apiLimiter);
+router.use('/auth', authRoutes);
+router.use('/users', userRoutes);
+router.use('/properties', propertyRoutes);
+router.use('/search', searchRoutes);
+router.use('/bookings', bookingRoutes);
+router.use('/payments', paymentRoutes);
+router.use('/maintenance', maintenanceRoutes);
+router.use('/communication', communicationRoutes);
+router.use('/admin', adminRoutes);
+router.use('/reports', reportingRoutes);
 
 app.use(router);
+app.use(errorHandler);
 
-const PORT = process.env.PORT || 3500;
-app.listen(PORT, () => {
-  console.log(`Server running on http://localhost:${PORT}`);
+const server = app.listen(PORT, () => {
+  console.log(`PRMS Backend running on http://localhost:${PORT} (${env.NODE_ENV})`);
 });
+
+export default app;

@@ -1,0 +1,24 @@
+import express from 'express';
+import { authenticate } from '../../middleware/auth';
+import { adminOnly } from '../../middleware/rbac';
+import { AdminController } from './controller_admin';
+
+const router = express.Router();
+const ctrl = new AdminController();
+
+router.use(authenticate);
+
+// Settings - admin only
+router.get('/settings', adminOnly, ctrl.getSettings);
+router.put('/settings', adminOnly, ctrl.updateSetting);
+router.post('/settings', adminOnly, ctrl.addSetting);
+
+// Audit logs - admin only
+router.get('/audit-logs', adminOnly, ctrl.getAuditLogs);
+
+// Notifications - any authenticated user
+router.get('/notifications', ctrl.getNotifications);
+router.patch('/notifications/:id/read', ctrl.markNotificationRead);
+router.post('/notifications/read-all', ctrl.markAllRead);
+
+export default router;
