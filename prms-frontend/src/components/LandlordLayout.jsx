@@ -1,4 +1,4 @@
-import { Outlet, useLocation, useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate, Outlet } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import {
   Bell,
@@ -14,61 +14,30 @@ import {
   Wrench,
 } from 'lucide-react'
 import PageTransition from './PageTransition'
+import { useAuth } from '../contexts/AuthContext'
 import './LandlordLayout.css'
 
 function LandlordLayout() {
   const navigate = useNavigate()
   const location = useLocation()
+  const { user, logout } = useAuth()
 
   const navItems = [
-    {
-      key: 'dashboard',
-      label: 'Dashboard',
-      icon: LayoutDashboard,
-      path: '/landlord',
-    },
-    {
-      key: 'properties',
-      label: 'Properties',
-      icon: Building2,
-      path: '/landlord/properties',
-    },
-    {
-      key: 'bookings',
-      label: 'Bookings',
-      icon: CalendarDays,
-      path: '/landlord/bookings',
-    },
-    {
-      key: 'finance',
-      label: 'Finance',
-      icon: WalletCards,
-      path: '/landlord/finance',
-    },
-    {
-      key: 'maintenance',
-      label: 'Maintenance',
-      icon: Wrench,
-      path: '/landlord/maintenance',
-    },
-    {
-      key: 'messages',
-      label: 'Messages',
-      icon: MessageCircle,
-      path: '/landlord/messages',
-    },
-    {
-      key: 'settings',
-      label: 'Settings',
-      icon: Settings,
-      path: '/landlord/settings',
-    },
+    { key: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, path: '/landlord' },
+    { key: 'properties', label: 'Properties', icon: Building2, path: '/landlord/properties' },
+    { key: 'bookings', label: 'Bookings', icon: CalendarDays, path: '/landlord/bookings' },
+    { key: 'finance', label: 'Finance', icon: WalletCards, path: '/landlord/finance' },
+    { key: 'maintenance', label: 'Maintenance', icon: Wrench, path: '/landlord/maintenance' },
+    { key: 'messages', label: 'Messages', icon: MessageCircle, path: '/landlord/messages' },
+    { key: 'settings', label: 'Settings', icon: Settings, path: '/landlord/settings' },
   ]
 
   function safeNavigate(path) {
-    if (location.pathname !== path) {
-      navigate(path)
-    }
+    if (location.pathname !== path) navigate(path)
+  }
+
+  function handleLogout() {
+    logout(navigate)
   }
 
   function getActivePage() {
@@ -85,13 +54,18 @@ function LandlordLayout() {
 
   const activePage = getActivePage()
 
+  const initials = user
+    ? `${(user.firstName || user.name || '?')[0]}${(user.lastName || '')[0] || ''}`.toUpperCase()
+    : 'AS'
+
+  const displayName = user?.firstName || user?.name || 'Alex Sterling'
+
   return (
     <main className="landlord-layout-shell">
       <aside className="landlord-layout-sidebar">
         {navItems.map((item) => {
           const Icon = item.icon
           const isActive = activePage === item.key
-
           return (
             <motion.button
               type="button"
@@ -123,7 +97,7 @@ function LandlordLayout() {
         <motion.button
           type="button"
           className="landlord-layout-side-btn logout"
-          onClick={() => safeNavigate('/login')}
+          onClick={handleLogout}
           title="Logout"
           whileTap={{ scale: 0.96 }}
         >
@@ -158,11 +132,11 @@ function LandlordLayout() {
 
             <motion.div className="landlord-layout-profile" whileHover={{ scale: 1.02 }}>
               <div>
-                <h3>Alex Sterling</h3>
+                <h3>{displayName}</h3>
                 <p>Landlord</p>
               </div>
 
-              <div className="landlord-layout-avatar">AS</div>
+              <div className="landlord-layout-avatar">{initials}</div>
             </motion.div>
           </div>
         </header>

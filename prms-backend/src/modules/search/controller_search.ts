@@ -13,7 +13,7 @@ export class SearchController {
 
   toggleFavorite = async (req: AuthRequest, res: Response) => {
     try {
-      const nowFavorite = await searchService.toggleFavorite(req.user!.id, req.params.propertyId);
+      const nowFavorite = await searchService.toggleFavorite(req.user!.id, String(req.params.propertyId));
       res.json(successResponse({ isFavorite: nowFavorite }));
     } catch (error: any) { res.status(400).json({ success: false, error: { message: error.message } }); }
   };

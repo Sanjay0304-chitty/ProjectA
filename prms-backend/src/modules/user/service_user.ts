@@ -26,7 +26,7 @@ export async function createUser(email: string, password: string, full_name?: st
   if (existing) throw new Error('Email already exists');
   const passwordHash = await bcrypt.hash(password, 10);
   return prisma.user.create({
-    data: { email, passwordHash, full_name, phone, UserRole: { create: { role: { connect: { name: role } } } } },
+    data: { email, passwordHash, full_name, phone, firebase_uid: '', UserRole: { create: { role: { connect: { name: role } } } } },
     include: { UserRole: { include: { role: true } } },
   });
 }

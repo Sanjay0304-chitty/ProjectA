@@ -15,7 +15,7 @@ export class PaymentController {
 
   getById = async (req: Request, res: Response) => {
     try {
-      const payment = await paymentService.getPaymentById(req.params.id);
+      const payment = await paymentService.getPaymentById(String(req.params.id));
       if (!payment) return res.status(404).json({ success: false, error: { message: 'Payment not found' } });
       res.json(successResponse(payment));
     } catch (error: any) { res.status(500).json({ success: false, error: { message: error.message } }); }
@@ -30,7 +30,7 @@ export class PaymentController {
 
   markPaid = async (req: Request, res: Response) => {
     try {
-      const payment = await paymentService.markAsPaid(req.params.id);
+      const payment = await paymentService.markAsPaid(String(req.params.id));
       res.json(successResponse(payment, 'Payment marked as paid'));
     } catch (error: any) { res.status(400).json({ success: false, error: { message: error.message } }); }
   };

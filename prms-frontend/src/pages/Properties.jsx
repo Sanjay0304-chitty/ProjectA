@@ -1,154 +1,279 @@
+import { useState, useEffect } from 'react'
+import { motion } from 'framer-motion'
 import {
+  Building2,
+  MapPin,
+  DollarSign,
+  Search,
   Filter,
   Home,
-  Map,
-  MessageCircle,
-  Minus,
+  Store,
+  Briefcase,
   Plus,
-  SlidersHorizontal,
-  WalletCards,
+  RotateCw,
+  Grid3x3,
+  List,
+  ChevronLeft,
+  ChevronRight,
 } from 'lucide-react'
+import { propertyApi, getApiError } from '../api'
 
-import { useEffect, useState } from 'react'
-import { getProperties } from '../services/api'
-import './Properties.css'
+const PROPERTY_TYPES = [
+  { key: 'all', label: 'All Types', icon: Building2 },
+  { key: 'Residential', label: 'Residential', icon: Home },
+  { key: 'Commercial', label: 'Commercial', icon: Briefcase },
+  { key: 'Retail', label: 'Retail', icon: Store },
+]
 
 function Properties() {
   const [properties, setProperties] = useState([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
+  const [viewMode, setViewMode] = useState('grid')
+  const [activeType, setActiveType] = useState('all')
+  const [searchTerm, setSearchTerm] = useState('')
+  const [currentPage, setCurrentPage] = useState(1)
+  const [totalCount, setTotalCount] = useState(0)
+  const perPage = 12
+
+  async function fetchProperties() {
+    setLoading(true)
+    setError(null)
+    try {
+      const params = { page: currentPage, limit: perPage }
+      if (activeType !== 'all') params.type = activeType
+      if (searchTerm.trim()) params.search = searchTerm.trim()
+
+      const { data } = await propertyApi.list(params)
+      const list = data.properties || data.data || data
+      setProperties(Array.isArray(list) ? list : [])
+
+      const total =
+        data.totalCount ?? data.total ?? data.pagination?.total ?? list.length
+      setTotalCount(total)
+    } catch (err) {
+      setError(getApiError(err))
+      setProperties([])
+    } finally {
+      setLoading(false)
+    }
+  }
 
   useEffect(() => {
-    async function loadProperties() {
-      try {
-        const result = await getProperties()
+    fetchProperties()
+  }, [currentPage, activeType])
 
-        console.log('Properties:', result)
+  /* Debounced search */
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setCurrentPage(1)
+      fetchProperties()
+    }, 400)
+    return () => clearTimeout(timer)
+  }, [searchTerm])
 
-        setProperties(result.properties || [])
-      } catch (error) {
-        console.error(error)
-      } finally {
-        setLoading(false)
-      }
-    }
+  function handleSearch(e) {
+    if (e) e.preventDefault()
+    setCurrentPage(1)
+    fetchProperties()
+  }
 
-    loadProperties()
-  }, [])
+  const totalPages = Math.max(Math.ceil(totalCount / perPage), 1)
 
-  const mapPins = [
-    { price: 'RM 4.5k', top: '31%', left: '43%' },
-    { price: 'RM 3.2k', top: '55%', left: '52%' },
-    { price: 'RM 2.2k', top: '40%', left: '75%' },
-    { price: 'RM 5.8k', top: '66%', left: '63%', active: true },
-  ]
-
-  if (loading) {
-    return (
-      <div className="loading-screen">
-        Loading Properties...
-      </div>
-    )
+  function statusColor(status) {
+    const s = (status || '').toLowerCase()
+    if (s === 'available') return 'green'
+    if (s === 'pending') return 'yellow'
+    if (s === 'rented' || s === 'approved' || s === 'active') return 'blue'
+    if (s === 'rejected' || s === 'inactive') return 'red'
+    return 'gray'
   }
 
   return (
-    <>
-      <section className="property-browse-filterbar">
-        <div className="property-browse-location">
-          <Map size={22} />
-          <span>Kuala Lumpur, Malaysia</span>
+    <div className="properties-page">
+      {/* ── Header ── */}
+      <div className="properties-header">
+        <div className="properties-title-row">
+          <h1>Properties</h1>
+          <p>Browse and manage all property listings in your portfolio.</p>
         </div>
 
-        <button type="button" className="property-browse-chip">
-          <WalletCards size={20} />
-          RM 2.5k - 5k
-        </button>
+        <motion.button
+          type="button"
+          className="btn-primary"
+          onClick={() => alert('Create property modal coming soon')}
+          whileHover={{ y: -2 }}
+          whileTap={{ scale: 0.97 }}
+        >
+          <Plus size={18} /> Add Property
+        </motion.button>
+      </div>
 
-        <button type="button" className="property-browse-chip">
-          <Home size={20} />
-          Apartment
-        </button>
+      {/* ── Filters ── */}
+      <div className="properties-toolbar">
+        <form className="properties-search" onSubmit={handleSearch}>
+          <Search size={18} />
+          <input
+            type="text"
+            placeholder="Search properties..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+          <Filter size={18} className="properties-filter-icon" />
+        </form>
 
-        <button type="button" className="property-browse-filter-btn">
-          <Filter size={20} />
-          Filters
-        </button>
-      </section>
-
-      <section className="property-browse-layout">
-        <aside className="property-browse-list">
-          <div className="property-browse-list-header">
-            <h2>186 Properties Available</h2>
-            <SlidersHorizontal size={22} />
-          </div>
-
-          <div className="property-browse-cards">
-            {properties.map((property) => (
-              <article className="property-browse-card" key={property.name}>
-                <div className="property-browse-image">
-                  <img src={property.image} alt={property.name} />
-                  <span>{property.rating} ★</span>
-                </div>
-
-                <div className="property-browse-info">
-                  <div className="property-browse-title-row">
-                    <h3>{property.name}</h3>
-                    <strong>{property.price}</strong>
-                  </div>
-
-                  <p>{property.location}</p>
-
-                  <div className="property-browse-meta">
-                    <span>{property.beds} beds</span>
-                    <span>{property.size}</span>
-                  </div>
-                </div>
-              </article>
-            ))}
-          </div>
-        </aside>
-
-        <section className="property-browse-map-panel">
-          <div className="property-browse-map">
-            <div className="property-map-label property-label-one">KLCC Park</div>
-            <div className="property-map-label property-label-two">Pavilion KL</div>
-            <div className="property-map-label property-label-three">Jalan Bukit Bintang</div>
-            <div className="property-map-label property-label-four">Starhill</div>
-
-            <div className="property-main-pin"></div>
-
-            {mapPins.map((pin) => (
-              <div
-                className={pin.active ? 'property-map-price active' : 'property-map-price'}
-                style={{ top: pin.top, left: pin.left }}
-                key={`${pin.price}-${pin.top}`}
+        <div className="properties-view-controls">
+          <div className="properties-type-filters">
+            {PROPERTY_TYPES.map((t) => (
+              <button
+                type="button"
+                key={t.key}
+                className={`btn-type ${activeType === t.key ? 'active' : ''}`}
+                onClick={() => {
+                  setActiveType(t.key)
+                  setCurrentPage(1)
+                }}
               >
-                {pin.price}
-                {pin.active && <span>★</span>}
-              </div>
+                <t.icon size={16} />
+                {t.label}
+              </button>
             ))}
-
-            <button type="button" className="property-chat-float">
-              <MessageCircle size={30} />
-            </button>
-
-            <button type="button" className="property-redraw-btn">
-              <Map size={20} />
-              Redraw Search Area
-            </button>
-
-            <div className="property-zoom-controls">
-              <button type="button">
-                <Plus size={22} />
-              </button>
-
-              <button type="button">
-                <Minus size={22} />
-              </button>
-            </div>
           </div>
-        </section>
-      </section>
-    </>
+
+          <div className="properties-view-toggle">
+            <button
+              type="button"
+              className={`view-btn ${viewMode === 'grid' ? 'active' : ''}`}
+              onClick={() => setViewMode('grid')}
+            >
+              <Grid3x3 size={18} />
+            </button>
+            <button
+              type="button"
+              className={`view-btn ${viewMode === 'list' ? 'active' : ''}`}
+              onClick={() => setViewMode('list')}
+            >
+              <List size={18} />
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* ── Error ── */}
+      {error && (
+        <motion.div className="properties-error" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+          {error}
+        </motion.div>
+      )}
+
+      {/* ── Loading ── */}
+      {loading && (
+        <div className="properties-loading">
+          <div className="spinner" />
+          <p>Loading properties...</p>
+        </div>
+      )}
+
+      {/* ── Grid / List ── */}
+      {!loading && !error && (
+        <>
+          {properties.length === 0 ? (
+            <div className="properties-empty">
+              <Building2 size={56} />
+              <h2>No properties found</h2>
+              <p>Try adjusting your filters or add a new property.</p>
+            </div>
+          ) : (
+            <>
+              <div className={`properties-${viewMode}`}>
+                {properties.map((p, i) => (
+                  <motion.div
+                    key={p._id || p.id || i}
+                    className="property-item"
+                    initial={{ opacity: 0, y: 18 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: i * 0.025 }}
+                    whileHover={{ y: -4, scale: 1.01 }}
+                  >
+                    {/* Image card (grid) */}
+                    <div className="property-card">
+                      <div className="property-card-image">
+                        {p.image || p.thumbnail ? (
+                          <img src={p.image} alt={p.name || p.title} />
+                        ) : (
+                          <Building2 size={40} />
+                        )}
+                        <span
+                          className={`property-status status-${statusColor(
+                            p.status || 'available'
+                          )}`}
+                        >
+                          {p.status || 'Available'}
+                        </span>
+                      </div>
+
+                      <div className="property-card-body">
+                        <h3>{p.name || p.title || 'Property'}</h3>
+                        <div className="property-location-row">
+                          <MapPin size={14} />
+                          <span>
+                            {p.location || p.address || 'Location not set'}
+                          </span>
+                        </div>
+                        <div className="property-type-row">
+                          <span className="property-type-badge">
+                            {p.type || 'General'}
+                          </span>
+                        </div>
+                        <div className="property-bottom-row">
+                          <div className="property-price">
+                            <DollarSign size={14} />
+                            <span>
+                              {Number(p.price || p.rent || 0).toLocaleString()}{' '}
+                              / mo
+                            </span>
+                          </div>
+                          <div className="property-units">
+                            {p.unitCount || p.unit_count || 0} units
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
+
+              {/* ── Pagination ── */}
+              {totalPages > 1 && (
+                <div className="properties-pagination">
+                  <button
+                    type="button"
+                    disabled={currentPage <= 1}
+                    onClick={() => setCurrentPage((c) => Math.max(c - 1, 1))}
+                  >
+                    <ChevronLeft size={16} /> Prev
+                  </button>
+
+                  <span className="page-info">
+                    Page {currentPage} of {totalPages}
+                  </span>
+
+                  <button
+                    type="button"
+                    disabled={currentPage >= totalPages}
+                    onClick={() =>
+                      setCurrentPage((c) => Math.min(c + 1, totalPages))
+                    }
+                  >
+                    Next <ChevronRight size={16} />
+                  </button>
+                </div>
+              )}
+            </>
+          )}
+        </>
+      )}
+    </div>
   )
 }
 

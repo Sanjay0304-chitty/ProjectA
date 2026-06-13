@@ -16,7 +16,7 @@ export class UserController {
 
   getById = async (req: Request, res: Response) => {
     try {
-      const user = await userService.getUserById(req.params.id);
+      const user = await userService.getUserById(String(req.params.id));
       if (!user) return res.status(404).json({ success: false, error: { message: 'User not found' } });
       res.json(successResponse(user));
     } catch (error: any) { res.status(500).json({ success: false, error: { message: error.message } }); }
@@ -32,28 +32,28 @@ export class UserController {
 
   update = async (req: Request, res: Response) => {
     try {
-      const user = await userService.updateUser(req.params.id, req.body);
+      const user = await userService.updateUser(String(req.params.id), req.body);
       res.json(successResponse(user, 'User updated'));
     } catch (error: any) { res.status(400).json({ success: false, error: { message: error.message } }); }
   };
 
   remove = async (req: Request, res: Response) => {
     try {
-      await userService.softDeleteUser(req.params.id);
+      await userService.softDeleteUser(String(req.params.id));
       res.json(successResponse(null, 'User deactivated'));
     } catch (error: any) { res.status(400).json({ success: false, error: { message: error.message } }); }
   };
 
   activate = async (req: Request, res: Response) => {
     try {
-      const user = await userService.activateUser(req.params.id);
+      const user = await userService.activateUser(String(req.params.id));
       res.json(successResponse(user, 'User activated'));
     } catch (error: any) { res.status(400).json({ success: false, error: { message: error.message } }); }
   };
 
   suspend = async (req: Request, res: Response) => {
     try {
-      const user = await userService.suspendUser(req.params.id);
+      const user = await userService.suspendUser(String(req.params.id));
       res.json(successResponse(user, 'User suspended'));
     } catch (error: any) { res.status(400).json({ success: false, error: { message: error.message } }); }
   };
@@ -61,7 +61,7 @@ export class UserController {
   changeRole = async (req: Request, res: Response) => {
     try {
       const { role } = req.body;
-      await userService.changeUserRole(req.params.id, role);
+      await userService.changeUserRole(String(req.params.id), role);
       res.json(successResponse(null, `Role changed to ${role}`));
     } catch (error: any) { res.status(400).json({ success: false, error: { message: error.message } }); }
   };

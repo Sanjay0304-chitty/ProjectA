@@ -16,7 +16,7 @@ export class BookingController {
 
   getById = async (req: Request, res: Response) => {
     try {
-      const booking = await bookingService.getBookingById(req.params.id);
+      const booking = await bookingService.getBookingById(String(req.params.id));
       if (!booking) return res.status(404).json({ success: false, error: { message: 'Booking not found' } });
       res.json(successResponse(booking));
     } catch (error: any) { res.status(500).json({ success: false, error: { message: error.message } }); }
@@ -31,14 +31,14 @@ export class BookingController {
 
   update = async (req: AuthRequest, res: Response) => {
     try {
-      const booking = await bookingService.updateBooking(req.params.id, req.body);
+      const booking = await bookingService.updateBooking(String(req.params.id), req.body);
       res.json(successResponse(booking, 'Booking updated'));
     } catch (error: any) { res.status(400).json({ success: false, error: { message: error.message } }); }
   };
 
   cancel = async (req: Request, res: Response) => {
     try {
-      await bookingService.cancelBooking(req.params.id);
+      await bookingService.cancelBooking(String(req.params.id));
       res.json(successResponse(null, 'Booking cancelled'));
     } catch (error: any) { res.status(400).json({ success: false, error: { message: error.message } }); }
   };

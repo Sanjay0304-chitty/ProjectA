@@ -5,12 +5,11 @@
   "main": "src/app.ts",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "dev": "nodemon --ext ts --exec ts-node src/app.ts",
+    "dev": "tsx watch src/app.ts",
     "start": "node dist/app.js",
     "prisma:migrate": "npx prisma migrate dev --name init_migration",
     "prisma:generate": "npx prisma generate",
-    "prisma:seed": "npx tsx prisma/seed.ts",
-    "dev": "tsx watch src/app.ts"
+    "prisma:seed": "npx tsx prisma/seed.ts"
   },
   "dependencies": {
     "@prisma/adapter-better-sqlite3": "^7.8.0",
@@ -33,6 +32,7 @@
     "@types/cors": "^2.8.17",
     "@types/express": "^5.0.6",
     "@types/jsonwebtoken": "^9.0.10",
+    "@types/morgan": "^1.9.10",
     "@types/node": "^25.9.3",
     "@types/uuid": "^10.0.0",
     "nodemon": "^3.0.2",

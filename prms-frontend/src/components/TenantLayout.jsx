@@ -1,4 +1,4 @@
-import { Outlet, useLocation, useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate, Outlet } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import {
   Bell,
@@ -14,11 +14,13 @@ import {
   Wrench,
 } from 'lucide-react'
 import PageTransition from './PageTransition'
+import { useAuth } from '../contexts/AuthContext'
 import './TenantLayout.css'
 
 function TenantLayout() {
   const navigate = useNavigate()
   const location = useLocation()
+  const { user, logout } = useAuth()
 
   const navItems = [
     { key: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, path: '/tenant' },
@@ -31,9 +33,11 @@ function TenantLayout() {
   ]
 
   function safeNavigate(path) {
-    if (location.pathname !== path) {
-      navigate(path)
-    }
+    if (location.pathname !== path) navigate(path)
+  }
+
+  function handleLogout() {
+    logout(navigate)
   }
 
   function getActivePage() {
@@ -50,13 +54,18 @@ function TenantLayout() {
 
   const activePage = getActivePage()
 
+  const initials = user
+    ? `${(user.firstName || user.name || '?')[0]}${(user.lastName || '')[0] || ''}`.toUpperCase()
+    : 'AT'
+
+  const displayName = user?.firstName || user?.name || 'Alex Tan'
+
   return (
     <main className="tenant-layout-shell">
       <aside className="tenant-layout-sidebar">
         {navItems.map((item) => {
           const Icon = item.icon
           const isActive = activePage === item.key
-
           return (
             <motion.button
               type="button"
@@ -88,7 +97,7 @@ function TenantLayout() {
         <motion.button
           type="button"
           className="tenant-layout-side-btn logout"
-          onClick={() => safeNavigate('/login')}
+          onClick={handleLogout}
           title="Logout"
           whileTap={{ scale: 0.96 }}
         >
@@ -123,11 +132,11 @@ function TenantLayout() {
 
             <motion.div className="tenant-layout-profile" whileHover={{ scale: 1.02 }}>
               <div>
-                <h3>Alex Tan</h3>
+                <h3>{displayName}</h3>
                 <p>Tenant</p>
               </div>
 
-              <div className="tenant-layout-avatar">AT</div>
+              <div className="tenant-layout-avatar">{initials}</div>
             </motion.div>
           </div>
         </header>

@@ -1,23 +1,67 @@
-import { Link, useNavigate } from 'react-router-dom'
-import { motion } from 'framer-motion'
+import { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { motion } from 'framer-motion';
 import {
   Building2,
   Eye,
+  EyeOff,
   LockKeyhole,
   Mail,
   User,
   UserPlus,
-} from 'lucide-react'
-
-function Empty() {
-    return null;
-}
+  Phone,
+  MapPin,
+} from 'lucide-react';
+import { useAuth } from '../contexts/AuthContext';
 
 function Register() {
-  const navigate = useNavigate()
+  const navigate = useNavigate();
+  const { register, error, clearError } = useAuth();
 
-  function handleCreateAccount() {
-    navigate('/role')
+  const [formData, setFormData] = useState({
+    firstName: '',
+    lastName: '',
+    email: '',
+    phone: '',
+    password: '',
+    confirmPassword: '',
+  });
+
+  const [showPassword, setShowPassword] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+
+  function handleChange(field, value) {
+    setFormData((prev) => ({ ...prev, [field]: value }));
+  }
+
+  async function handleSubmit(e) {
+    if (e) e.preventDefault();
+    setSubmitting(true);
+    clearError();
+
+    if (formData.password !== formData.confirmPassword) {
+      setSubmitting(false);
+      /* Simple inline mismatch handling */
+      alert('Passwords do not match');
+      return;
+    }
+
+    const result = await register(
+      {
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        email: formData.email,
+        phone: formData.phone,
+        password: formData.password,
+      },
+      navigate
+    );
+
+    if (!result.success) {
+      clearError();
+    }
+
+    setSubmitting(false);
   }
 
   return (
@@ -51,7 +95,7 @@ function Register() {
             animate={{ y: 0, opacity: 1 }}
             transition={{ delay: 0.45, duration: 0.55 }}
           >
-            Start managing property smarter.
+            Join the Future of Property Management.
           </motion.h1>
 
           <motion.p
@@ -59,8 +103,8 @@ function Register() {
             animate={{ y: 0, opacity: 1 }}
             transition={{ delay: 0.55, duration: 0.55 }}
           >
-            Create your PRMS account first, then choose whether you are joining as
-            a tenant, landlord, or admin user.
+            Create your account and start managing properties, bookings,
+            and tenants in one powerful platform used across Southeast Asia.
           </motion.p>
 
           <motion.div
@@ -72,17 +116,19 @@ function Register() {
           >
             <div className="avatar-group">
               <motion.div className="avatar" whileHover={{ y: -4 }}>
-                PR
+                JD
               </motion.div>
+
               <motion.div className="avatar" whileHover={{ y: -4 }}>
-                MS
+                MC
               </motion.div>
+
               <motion.div className="avatar" whileHover={{ y: -4 }}>
-                AI
+                SA
               </motion.div>
             </div>
 
-            <span>Secure property management workflow</span>
+            <span>Trusted by regional leaders</span>
           </motion.div>
         </div>
       </motion.section>
@@ -113,78 +159,158 @@ function Register() {
             animate={{ y: 0, opacity: 1 }}
             transition={{ delay: 0.38, duration: 0.35 }}
           >
-            Register first, then select your PRMS role.
+            Register to start managing your properties.
           </motion.p>
 
-          <form>
+          <form onSubmit={handleSubmit}>
+            <motion.div
+              initial={{ y: 18, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ delay: 0.4, duration: 0.35 }}
+            >
+              <div className="register-row">
+                <div className="register-half">
+                  <label>First Name</label>
+                  <div className="input-box">
+                    <User size={22} />
+                    <input
+                      type="text"
+                      placeholder="John"
+                      value={formData.firstName}
+                      onChange={(e) => handleChange('firstName', e.target.value)}
+                      required
+                    />
+                  </div>
+                </div>
+
+                <div className="register-half">
+                  <label>Last Name</label>
+                  <div className="input-box">
+                    <User size={22} />
+                    <input
+                      type="text"
+                      placeholder="Doe"
+                      value={formData.lastName}
+                      onChange={(e) => handleChange('lastName', e.target.value)}
+                      required
+                    />
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+
             <motion.div
               initial={{ y: 18, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
               transition={{ delay: 0.46, duration: 0.35 }}
             >
-              <label>Full Name</label>
-              <div className="input-box">
-                <User size={22} />
-                <input type="text" placeholder="Enter your full name" />
-              </div>
-            </motion.div>
-
-            <motion.div
-              initial={{ y: 18, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              transition={{ delay: 0.54, duration: 0.35 }}
-            >
               <label>Email Address</label>
               <div className="input-box">
                 <Mail size={22} />
-                <input type="email" placeholder="name@example.com" />
+                <input
+                  type="email"
+                  placeholder="name@example.com"
+                  value={formData.email}
+                  onChange={(e) => handleChange('email', e.target.value)}
+                  required
+                />
               </div>
             </motion.div>
 
             <motion.div
               initial={{ y: 18, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
-              transition={{ delay: 0.62, duration: 0.35 }}
+              transition={{ delay: 0.52, duration: 0.35 }}
+            >
+              <label>Phone</label>
+              <div className="input-box">
+                <Phone size={22} />
+                <input
+                  type="tel"
+                  placeholder="+65 1234 5678"
+                  value={formData.phone}
+                  onChange={(e) => handleChange('phone', e.target.value)}
+                />
+              </div>
+            </motion.div>
+
+            <motion.div
+              initial={{ y: 18, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ delay: 0.58, duration: 0.35 }}
             >
               <label>Password</label>
               <div className="input-box">
                 <LockKeyhole size={22} />
-                <input type="password" placeholder="Create password" />
-                <Eye size={22} className="input-right-icon" />
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  placeholder="Min 6 characters"
+                  value={formData.password}
+                  onChange={(e) => handleChange('password', e.target.value)}
+                  required
+                  minLength={6}
+                />
+                <span
+                  className="input-right-icon"
+                  onClick={() => setShowPassword((v) => !v)}
+                  role="button"
+                  tabIndex={0}
+                >
+                  {showPassword ? <EyeOff size={22} /> : <Eye size={22} />}
+                </span>
               </div>
             </motion.div>
 
             <motion.div
               initial={{ y: 18, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
-              transition={{ delay: 0.7, duration: 0.35 }}
+              transition={{ delay: 0.64, duration: 0.35 }}
             >
               <label>Confirm Password</label>
               <div className="input-box">
                 <LockKeyhole size={22} />
-                <input type="password" placeholder="Confirm password" />
-                <Eye size={22} className="input-right-icon" />
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  placeholder="Re-enter password"
+                  value={formData.confirmPassword}
+                  onChange={(e) => handleChange('confirmPassword', e.target.value)}
+                  required
+                  minLength={6}
+                />
               </div>
             </motion.div>
 
+            {/* Error message */}
+            {error && (
+              <motion.div
+                className="login-error"
+                role="alert"
+                initial={{ opacity: 0, y: -8 }}
+                animate={{ opacity: 1, y: 0 }}
+              >
+                {error}
+              </motion.div>
+            )}
+
             <motion.button
-              type="button"
+              type="submit"
               className="primary-btn"
-              onClick={handleCreateAccount}
+              disabled={submitting}
               initial={{ y: 18, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
-              transition={{ delay: 0.8, duration: 0.35 }}
+              transition={{ delay: 0.72, duration: 0.35 }}
               whileHover={{ y: -2, scale: 1.01 }}
               whileTap={{ scale: 0.97 }}
             >
-              Create Account <UserPlus size={20} />
+              {submitting ? 'Creating Account...' : 'Create Account'}{' '}
+              <UserPlus size={20} />
             </motion.button>
 
             <motion.p
               className="signup-text"
               initial={{ y: 18, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
-              transition={{ delay: 0.9, duration: 0.35 }}
+              transition={{ delay: 0.8, duration: 0.35 }}
             >
               Already have an account? <Link to="/login">Sign in</Link>
             </motion.p>
@@ -192,7 +318,7 @@ function Register() {
         </motion.div>
       </motion.section>
     </main>
-  )
+  );
 }
 
-export default Register
+export default Register;

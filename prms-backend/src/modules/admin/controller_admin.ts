@@ -47,7 +47,7 @@ export class AdminController {
 
   markNotificationRead = async (req: AuthRequest, res: Response) => {
     try {
-      await adminService.markNotificationRead(req.params.id);
+      await adminService.markNotificationRead(String(req.params.id));
       res.json(successResponse(null, 'Notification marked as read'));
     } catch (error: any) { res.status(400).json({ success: false, error: { message: error.message } }); }
   };

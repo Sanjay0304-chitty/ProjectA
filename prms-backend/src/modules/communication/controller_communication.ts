@@ -20,14 +20,14 @@ export class CommunicationController {
 
   getMessages = async (req: AuthRequest, res: Response) => {
     try {
-      const messages = await communicationService.getMessagesByConversation(req.params.conversationId);
+      const messages = await communicationService.getMessagesByConversation(String(req.params.conversationId));
       res.json(successResponse(messages));
     } catch (error: any) { res.status(500).json({ success: false, error: { message: error.message } }); }
   };
 
   markRead = async (req: AuthRequest, res: Response) => {
     try {
-      await communicationService.markAsRead(req.params.id);
+      await communicationService.markAsRead(String(req.params.id));
       res.json(successResponse(null, 'Message marked as read'));
     } catch (error: any) { res.status(400).json({ success: false, error: { message: error.message } }); }
   };

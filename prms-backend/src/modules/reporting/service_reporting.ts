@@ -20,7 +20,7 @@ export async function getRevenueReport(month?: string, year?: string) {
   const where: any = { status: 'paid' };
   if (month && year) {
     const start = new Date(`${year}-${month}-01`);
-    const end = new Date(year, parseInt(month), 0, 23, 59, 59);
+    const end = new Date(parseInt(year), parseInt(month), 0, 23, 59, 59);
     where.paid_at = { gte: start, lte: end };
   }
   

@@ -16,7 +16,7 @@ export class PropertyController {
 
   getById = async (req: Request, res: Response) => {
     try {
-      const property = await propertyService.getPropertyById(req.params.id);
+      const property = await propertyService.getPropertyById(String(req.params.id));
       if (!property) return res.status(404).json({ success: false, error: { message: 'Property not found' } });
       res.json(successResponse(property));
     } catch (error: any) { res.status(500).json({ success: false, error: { message: error.message } }); }
@@ -33,28 +33,28 @@ export class PropertyController {
 
   update = async (req: AuthRequest, res: Response) => {
     try {
-      const property = await propertyService.updateProperty(req.params.id, req.body);
+      const property = await propertyService.updateProperty(String(req.params.id), req.body);
       res.json(successResponse(property, 'Property updated'));
     } catch (error: any) { res.status(400).json({ success: false, error: { message: error.message } }); }
   };
 
   deactivate = async (req: Request, res: Response) => {
     try {
-      await propertyService.deactivateProperty(req.params.id);
+      await propertyService.deactivateProperty(String(req.params.id));
       res.json(successResponse(null, 'Property deactivated'));
     } catch (error: any) { res.status(400).json({ success: false, error: { message: error.message } }); }
   };
 
   addImage = async (req: Request, res: Response) => {
     try {
-      const image = await propertyService.addImage(req.params.id, req.body.url);
+      const image = await propertyService.addImage(String(req.params.id), req.body.url);
       res.status(201).json(successResponse(image));
     } catch (error: any) { res.status(400).json({ success: false, error: { message: error.message } }); }
   };
 
   deleteImage = async (req: Request, res: Response) => {
     try {
-      await propertyService.deleteImage(req.params.imageId);
+      await propertyService.deleteImage(String(req.params.imageId));
       res.json(successResponse(null, 'Image deleted'));
     } catch (error: any) { res.status(400).json({ success: false, error: { message: error.message } }); }
   };

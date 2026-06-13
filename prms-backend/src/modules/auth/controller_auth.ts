@@ -52,16 +52,11 @@ export class AuthController {
     }
     try {
       const { refreshToken } = req.body;
-      jwt.verify(refreshToken, env.JWT_REFRESH_SECRET, (err, decoded: any) => {
-        if (err) return res.status(401).json({ success: false, error: { message: 'Invalid refresh token' } });
-        authService.verifyRefreshToken(decoded.userId, refreshToken)
-          .then(async () => {
-            const tokens = authService.generateTokens(decoded.userId);
-            await authService.saveRefreshToken(decoded.userId, tokens.refreshToken);
-            res.json(successResponse({ tokens }, 'Token refreshed'));
-          })
-          .catch(() => res.status(401).json({ success: false, error: { message: 'Invalid refresh token' } }));
-      });
+      const decoded = jwt.verify(refreshToken, env.JWT_REFRESH_SECRET) as jwt.JwtPayload;
+      await authService.verifyRefreshToken((decoded as any).userId, refreshToken);
+      const tokens = authService.generateTokens((decoded as any).userId);
+      await authService.saveRefreshToken((decoded as any).userId, tokens.refreshToken);
+      res.json(successResponse({ tokens }, 'Token refreshed'));
     } catch (error: any) {
       res.status(401).json({ success: false, error: { message: error.message } });
     }

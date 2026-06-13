@@ -17,7 +17,13 @@ export async function getBookingById(id: string) {
 
 export async function createBooking(data: { propertyId: string; start_date: string; end_date: string; totalAmount?: number; }, userId: string) {
   return prisma.booking.create({
-    data: { ...data, user: { connect: { id: userId } } },
+    data: {
+      property: { connect: { id: data.propertyId } },
+      start_date: new Date(data.start_date),
+      end_date: new Date(data.end_date),
+      totalAmount: data.totalAmount,
+      user: { connect: { id: userId } },
+    },
     include: { user: true, property: true },
   });
 }

@@ -1,12 +1,34 @@
-import { Link, useNavigate } from 'react-router-dom'
-import { motion } from 'framer-motion'
-import { Building2, Eye, LockKeyhole, LogIn, Mail } from 'lucide-react'
+import { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { motion } from 'framer-motion';
+import { Building2, Eye, EyeOff, LockKeyhole, LogIn, Mail } from 'lucide-react';
+import { useAuth } from '../contexts/AuthContext';
 
 function Login() {
-  const navigate = useNavigate()
+  const navigate = useNavigate();
+  const { login, error, clearError, loading } = useAuth();
 
-  function handleSignIn() {
-    navigate('/admin')
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [remember, setRemember] = useState(false);
+
+  async function handleSubmit(e) {
+    if (e) e.preventDefault();
+    if (submitting) return;
+
+    clearError();
+    setSubmitting(true);
+
+    const result = await login({ email, password }, navigate);
+
+    /* Remember-me: persist refresh token to localStorage longer */
+    if (result.success && remember) {
+      /* token already stored by login() — kept in localStorage */
+    }
+
+    setSubmitting(false);
   }
 
   return (
@@ -107,7 +129,7 @@ function Login() {
             Log in to manage your property portfolio.
           </motion.p>
 
-          <form>
+          <form onSubmit={handleSubmit}>
             <motion.div
               initial={{ y: 18, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
@@ -117,7 +139,14 @@ function Login() {
 
               <div className="input-box">
                 <Mail size={22} />
-                <input type="email" placeholder="name@example.com" />
+                <input
+                  type="email"
+                  placeholder="name@example.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                  autoComplete="email"
+                />
               </div>
             </motion.div>
 
@@ -130,8 +159,22 @@ function Login() {
 
               <div className="input-box">
                 <LockKeyhole size={22} />
-                <input type="password" placeholder="••••••••" />
-                <Eye size={22} className="input-right-icon" />
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  placeholder="••••••••"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  autoComplete="current-password"
+                />
+                <span
+                  className="input-right-icon"
+                  onClick={() => setShowPassword((v) => !v)}
+                  role="button"
+                  tabIndex={0}
+                >
+                  {showPassword ? <EyeOff size={22} /> : <Eye size={22} />}
+                </span>
               </div>
             </motion.div>
 
@@ -142,24 +185,40 @@ function Login() {
               transition={{ delay: 0.62, duration: 0.35 }}
             >
               <label className="remember">
-                <input type="checkbox" />
+                <input
+                  type="checkbox"
+                  checked={remember}
+                  onChange={(e) => setRemember(e.target.checked)}
+                />
                 Remember me
               </label>
 
               <a href="#">Forgot Password?</a>
             </motion.div>
 
+            {/* Error message */}
+            {error && (
+              <motion.div
+                className="login-error"
+                role="alert"
+                initial={{ opacity: 0, y: -8 }}
+                animate={{ opacity: 1, y: 0 }}
+              >
+                {error}
+              </motion.div>
+            )}
+
             <motion.button
-              type="button"
+              type="submit"
               className="primary-btn"
-              onClick={handleSignIn}
+              disabled={submitting || loading}
               initial={{ y: 18, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
               transition={{ delay: 0.7, duration: 0.35 }}
               whileHover={{ y: -2, scale: 1.01 }}
               whileTap={{ scale: 0.97 }}
             >
-              Sign In <LogIn size={20} />
+              {submitting ? 'Signing in...' : 'Sign In'} <LogIn size={20} />
             </motion.button>
 
             <motion.div
@@ -200,7 +259,7 @@ function Login() {
         </motion.div>
       </motion.section>
     </main>
-  )
+  );
 }
 
-export default Login
+export default Login;

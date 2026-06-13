@@ -1,4 +1,4 @@
-import { Outlet, useLocation, useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate, Outlet } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import {
   Bell,
@@ -15,77 +15,36 @@ import {
   Wrench,
 } from 'lucide-react'
 import PageTransition from './PageTransition'
+import { useAuth } from '../contexts/AuthContext'
 import './AdminLayout.css'
 
 function AdminLayout() {
   const navigate = useNavigate()
   const location = useLocation()
+  const { user, logout } = useAuth()
 
   const navItems = [
-    {
-      key: 'dashboard',
-      label: 'Dashboard',
-      icon: LayoutDashboard,
-      path: '/admin',
-    },
-    {
-      key: 'users',
-      label: 'Users',
-      icon: Users,
-      path: '/admin/users',
-    },
-    {
-      key: 'properties',
-      label: 'Properties',
-      icon: Building2,
-      path: '/admin/properties',
-    },
-    {
-      key: 'bookings',
-      label: 'Bookings',
-      icon: CalendarDays,
-      path: '/admin/bookings',
-    },
-    {
-      key: 'finance',
-      label: 'Finance',
-      icon: WalletCards,
-      path: '/admin/finance',
-    },
-    {
-      key: 'maintenance',
-      label: 'Maintenance',
-      icon: Wrench,
-      path: '/admin/maintenance',
-    },
-    {
-      key: 'messages',
-      label: 'Messages',
-      icon: MessageCircle,
-      path: '/admin/messages',
-    },
-    {
-      key: 'reports',
-      label: 'Reports',
-      icon: FileText,
-      path: '/admin/reports',
-    },
-    {
-      key: 'settings',
-      label: 'Settings',
-      icon: Settings,
-      path: '/admin/settings',
-    },
+    { key: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, path: '/admin' },
+    { key: 'users', label: 'Users', icon: Users, path: '/admin/users' },
+    { key: 'properties', label: 'Properties', icon: Building2, path: '/admin/properties' },
+    { key: 'bookings', label: 'Bookings', icon: CalendarDays, path: '/admin/bookings' },
+    { key: 'finance', label: 'Finance', icon: WalletCards, path: '/admin/finance' },
+    { key: 'maintenance', label: 'Maintenance', icon: Wrench, path: '/admin/maintenance' },
+    { key: 'messages', label: 'Messages', icon: MessageCircle, path: '/admin/messages' },
+    { key: 'reports', label: 'Reports', icon: FileText, path: '/admin/reports' },
+    { key: 'settings', label: 'Settings', icon: Settings, path: '/admin/settings' },
   ]
 
   function safeNavigate(path) {
-    if (location.pathname !== path) {
-      navigate(path)
-    }
+    if (location.pathname !== path) navigate(path)
+  }
+
+  function handleLogout() {
+    logout(navigate)
   }
 
   function getActivePage() {
-    if (location.pathname === '/admin') return 'dashboard'
+    if (location.pathname === '/admin' || location.pathname === '/') return 'dashboard'
     if (location.pathname.includes('/admin/users')) return 'users'
     if (location.pathname.includes('/admin/properties')) return 'properties'
     if (location.pathname.includes('/admin/bookings')) return 'bookings'
@@ -100,7 +59,6 @@ function AdminLayout() {
 
   function getTopbarTitle() {
     const active = getActivePage()
-
     const titles = {
       dashboard: 'Admin Dashboard',
       users: 'User Management',
@@ -113,11 +71,15 @@ function AdminLayout() {
       settings: 'Admin Settings',
       help: 'Admin Help Center',
     }
-
     return titles[active]
   }
 
   const activePage = getActivePage()
+
+  /* Extract initials from user */
+  const initials = user
+    ? `${(user.firstName || user.name || '?')[0]}${(user.lastName || '')[0] || ''}`.toUpperCase()
+    : 'AS'
 
   return (
     <main className="admin-layout-shell">
@@ -125,7 +87,6 @@ function AdminLayout() {
         {navItems.map((item) => {
           const Icon = item.icon
           const isActive = activePage === item.key
-
           return (
             <motion.button
               type="button"
@@ -157,7 +118,7 @@ function AdminLayout() {
         <motion.button
           type="button"
           className="admin-layout-side-btn logout"
-          onClick={() => safeNavigate('/login')}
+          onClick={handleLogout}
           title="Logout"
           whileTap={{ scale: 0.96 }}
         >
@@ -186,7 +147,7 @@ function AdminLayout() {
             </motion.button>
 
             <motion.div className="admin-layout-avatar" whileHover={{ scale: 1.08 }}>
-              AS
+              {initials}
             </motion.div>
           </div>
         </header>

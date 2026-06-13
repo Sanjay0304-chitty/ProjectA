@@ -19,7 +19,7 @@ export async function getConversations(userId: string) {
 export async function getMessagesByConversation(conversationId: string) {
   return prisma.message.findMany({
     where: { conversationId },
-    orderBy: { created: 'asc' },
+    orderBy: { created_at: 'asc' },
     include: { sender: { select: { id: true, full_name: true } } },
   });
 }

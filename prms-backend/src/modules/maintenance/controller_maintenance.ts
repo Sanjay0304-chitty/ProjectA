@@ -15,7 +15,7 @@ export class MaintenanceController {
 
   getById = async (req: Request, res: Response) => {
     try {
-      const ticket = await maintenanceService.getTicketById(req.params.id);
+      const ticket = await maintenanceService.getTicketById(String(req.params.id));
       if (!ticket) return res.status(404).json({ success: false, error: { message: 'Ticket not found' } });
       res.json(successResponse(ticket));
     } catch (error: any) { res.status(500).json({ success: false, error: { message: error.message } }); }
@@ -30,14 +30,14 @@ export class MaintenanceController {
 
   update = async (req: Request, res: Response) => {
     try {
-      const ticket = await maintenanceService.updateTicket(req.params.id, req.body);
+      const ticket = await maintenanceService.updateTicket(String(req.params.id), req.body);
       res.json(successResponse(ticket, 'Ticket updated'));
     } catch (error: any) { res.status(400).json({ success: false, error: { message: error.message } }); }
   };
 
   resolve = async (req: Request, res: Response) => {
     try {
-      const ticket = await maintenanceService.resolveTicket(req.params.id);
+      const ticket = await maintenanceService.resolveTicket(String(req.params.id));
       res.json(successResponse(ticket, 'Ticket resolved'));
     } catch (error: any) { res.status(400).json({ success: false, error: { message: error.message } }); }
   };
