@@ -21,10 +21,13 @@ export const adminApi = {
   getNotifications(params) {
     return apiClient.get('/admin/notifications', { params });
   },
-  markRead(id) {
+  markAsRead(id) {
     return apiClient.patch(`/admin/notifications/${id}/read`);
   },
-  markAllRead() {
+  markAllAsRead() {
     return apiClient.post('/admin/notifications/read-all');
+  },
+  dismiss(id) {
+    return apiClient.delete(`/admin/notifications/${id}`);
   },
 };

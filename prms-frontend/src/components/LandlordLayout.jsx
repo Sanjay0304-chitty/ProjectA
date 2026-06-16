@@ -1,20 +1,14 @@
 import { useLocation, useNavigate, Outlet } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import {
-  Bell,
-  Building2,
-  CalendarDays,
   CircleHelp,
-  LayoutDashboard,
   LogOut,
-  MessageCircle,
   Search,
-  Settings,
-  WalletCards,
-  Wrench,
 } from 'lucide-react'
 import PageTransition from './PageTransition'
 import { useAuth } from '../contexts/AuthContext'
+import { buildNavItems, resolveActivePage } from './NavigationConfig'
+import NotificationDropdown from './NotificationDropdown'
 import './LandlordLayout.css'
 
 function LandlordLayout() {
@@ -22,15 +16,14 @@ function LandlordLayout() {
   const location = useLocation()
   const { user, logout } = useAuth()
 
-  const navItems = [
-    { key: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, path: '/landlord' },
-    { key: 'properties', label: 'Properties', icon: Building2, path: '/landlord/properties' },
-    { key: 'bookings', label: 'Bookings', icon: CalendarDays, path: '/landlord/bookings' },
-    { key: 'finance', label: 'Finance', icon: WalletCards, path: '/landlord/finance' },
-    { key: 'maintenance', label: 'Maintenance', icon: Wrench, path: '/landlord/maintenance' },
-    { key: 'messages', label: 'Messages', icon: MessageCircle, path: '/landlord/messages' },
-    { key: 'settings', label: 'Settings', icon: Settings, path: '/landlord/settings' },
-  ]
+  const role = user?.role || 'Landlord'
+  const navItems = buildNavItems(role)
+  const activePage = resolveActivePage(location.pathname, role)
+
+  const initials = user
+    ? (user.full_name || user.name || 'AS').split(' ').map((w) => w[0]).join('').toUpperCase().slice(0, 2)
+    : 'AS'
+  const displayName = user?.full_name || user?.name || '—'
 
   function safeNavigate(path) {
     if (location.pathname !== path) navigate(path)
@@ -39,26 +32,6 @@ function LandlordLayout() {
   function handleLogout() {
     logout(navigate)
   }
-
-  function getActivePage() {
-    if (location.pathname === '/landlord') return 'dashboard'
-    if (location.pathname.includes('/landlord/properties')) return 'properties'
-    if (location.pathname.includes('/landlord/bookings')) return 'bookings'
-    if (location.pathname.includes('/landlord/finance')) return 'finance'
-    if (location.pathname.includes('/landlord/maintenance')) return 'maintenance'
-    if (location.pathname.includes('/landlord/messages')) return 'messages'
-    if (location.pathname.includes('/landlord/settings')) return 'settings'
-    if (location.pathname.includes('/landlord/help')) return 'help'
-    return 'dashboard'
-  }
-
-  const activePage = getActivePage()
-
-  const initials = user
-    ? `${(user.firstName || user.name || '?')[0]}${(user.lastName || '')[0] || ''}`.toUpperCase()
-    : 'AS'
-
-  const displayName = user?.firstName || user?.name || 'Alex Sterling'
 
   return (
     <main className="landlord-layout-shell">
@@ -111,7 +84,7 @@ function LandlordLayout() {
           <div className="landlord-layout-brand" onClick={() => safeNavigate('/landlord')}>
             <h2>PRMS</h2>
             <span></span>
-            <p>Portfolio Manager</p>
+            <p>{role} Portal</p>
           </div>
 
           <div className="landlord-layout-search">
@@ -120,20 +93,12 @@ function LandlordLayout() {
           </div>
 
           <div className="landlord-layout-actions">
-            <motion.button
-              type="button"
-              className="landlord-layout-icon-btn"
-              title="Notifications"
-              whileHover={{ scale: 1.1, rotate: -6 }}
-              whileTap={{ scale: 0.92 }}
-            >
-              <Bell size={22} />
-            </motion.button>
+            <NotificationDropdown />
 
             <motion.div className="landlord-layout-profile" whileHover={{ scale: 1.02 }}>
               <div>
                 <h3>{displayName}</h3>
-                <p>Landlord</p>
+                <p>{role}</p>
               </div>
 
               <div className="landlord-layout-avatar">{initials}</div>

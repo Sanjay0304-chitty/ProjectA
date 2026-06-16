@@ -58,4 +58,11 @@ export class AdminController {
       res.json(successResponse(null, 'All notifications marked as read'));
     } catch (error: any) { res.status(400).json({ success: false, error: { message: error.message } }); }
   };
+
+  dismissNotification = async (req: AuthRequest, res: Response) => {
+    try {
+      await adminService.dismissNotification(String(req.params.id));
+      res.json(successResponse(null, 'Notification dismissed'));
+    } catch (error: any) { res.status(400).json({ success: false, error: { message: error.message } }); }
+  };
 }

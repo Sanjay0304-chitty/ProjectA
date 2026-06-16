@@ -1,20 +1,14 @@
 import { useLocation, useNavigate, Outlet } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import {
-  Bell,
-  Building2,
-  CalendarDays,
   CircleHelp,
-  LayoutDashboard,
   LogOut,
-  MessageCircle,
   Search,
-  Settings,
-  WalletCards,
-  Wrench,
 } from 'lucide-react'
 import PageTransition from './PageTransition'
 import { useAuth } from '../contexts/AuthContext'
+import { buildNavItems, resolveActivePage } from './NavigationConfig'
+import NotificationDropdown from './NotificationDropdown'
 import './TenantLayout.css'
 
 function TenantLayout() {
@@ -22,15 +16,14 @@ function TenantLayout() {
   const location = useLocation()
   const { user, logout } = useAuth()
 
-  const navItems = [
-    { key: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, path: '/tenant' },
-    { key: 'properties', label: 'Properties', icon: Building2, path: '/tenant/properties' },
-    { key: 'bookings', label: 'Bookings', icon: CalendarDays, path: '/tenant/bookings' },
-    { key: 'payments', label: 'Payments', icon: WalletCards, path: '/tenant/payments' },
-    { key: 'maintenance', label: 'Maintenance', icon: Wrench, path: '/tenant/maintenance' },
-    { key: 'messages', label: 'Messages', icon: MessageCircle, path: '/tenant/messages' },
-    { key: 'settings', label: 'Settings', icon: Settings, path: '/tenant/settings' },
-  ]
+  const role = user?.role || 'Tenant'
+  const navItems = buildNavItems(role)
+  const activePage = resolveActivePage(location.pathname, role)
+
+  const initials = user
+    ? (user.full_name || user.name || 'AT').split(' ').map((w) => w[0]).join('').toUpperCase().slice(0, 2)
+    : 'AT'
+  const displayName = user?.full_name || user?.name || '—'
 
   function safeNavigate(path) {
     if (location.pathname !== path) navigate(path)
@@ -39,26 +32,6 @@ function TenantLayout() {
   function handleLogout() {
     logout(navigate)
   }
-
-  function getActivePage() {
-    if (location.pathname === '/tenant') return 'dashboard'
-    if (location.pathname.includes('/tenant/properties')) return 'properties'
-    if (location.pathname.includes('/tenant/bookings')) return 'bookings'
-    if (location.pathname.includes('/tenant/payments')) return 'payments'
-    if (location.pathname.includes('/tenant/maintenance')) return 'maintenance'
-    if (location.pathname.includes('/tenant/messages')) return 'messages'
-    if (location.pathname.includes('/tenant/settings')) return 'settings'
-    if (location.pathname.includes('/tenant/help')) return 'help'
-    return 'dashboard'
-  }
-
-  const activePage = getActivePage()
-
-  const initials = user
-    ? `${(user.firstName || user.name || '?')[0]}${(user.lastName || '')[0] || ''}`.toUpperCase()
-    : 'AT'
-
-  const displayName = user?.firstName || user?.name || 'Alex Tan'
 
   return (
     <main className="tenant-layout-shell">
@@ -86,7 +59,7 @@ function TenantLayout() {
         <motion.button
           type="button"
           className={`tenant-layout-side-btn ${activePage === 'help' ? 'active' : ''}`}
-          onClick={() => safeNavigate('/tenant/help')}
+          onClick={() => safeNavigate(`${location.pathname.split('/')[0]}/help`)}
           title="Help"
           whileTap={{ scale: 0.96 }}
         >
@@ -111,29 +84,21 @@ function TenantLayout() {
           <div className="tenant-layout-brand" onClick={() => safeNavigate('/tenant')}>
             <h2>PRMS</h2>
             <span></span>
-            <p>Tenant Portal</p>
+            <p>{role} Portal</p>
           </div>
 
           <div className="tenant-layout-search">
             <Search size={22} />
-            <input type="text" placeholder="Search activities..." />
+            <input type="text" placeholder="Search..." />
           </div>
 
           <div className="tenant-layout-actions">
-            <motion.button
-              type="button"
-              className="tenant-layout-icon-btn"
-              title="Notifications"
-              whileHover={{ scale: 1.1, rotate: -6 }}
-              whileTap={{ scale: 0.92 }}
-            >
-              <Bell size={22} />
-            </motion.button>
+            <NotificationDropdown />
 
             <motion.div className="tenant-layout-profile" whileHover={{ scale: 1.02 }}>
               <div>
                 <h3>{displayName}</h3>
-                <p>Tenant</p>
+                <p>{role}</p>
               </div>
 
               <div className="tenant-layout-avatar">{initials}</div>

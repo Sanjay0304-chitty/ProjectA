@@ -45,3 +45,7 @@ export async function markNotificationRead(notificationId: string) {
 export async function markAllNotificationsRead(userId: string) {
   return prisma.notification.updateMany({ where: { userId, isRead: false }, data: { isRead: true } });
 }
+
+export async function dismissNotification(notificationId: string) {
+  return prisma.notification.delete({ where: { id: notificationId } });
+}

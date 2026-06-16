@@ -20,5 +20,6 @@ router.get('/audit-logs', adminOnly, ctrl.getAuditLogs);
 router.get('/notifications', ctrl.getNotifications);
 router.patch('/notifications/:id/read', ctrl.markNotificationRead);
 router.post('/notifications/read-all', ctrl.markAllRead);
+router.delete('/notifications/:id', ctrl.dismissNotification);
 
 export default router;

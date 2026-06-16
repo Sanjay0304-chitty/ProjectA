@@ -1,39 +1,43 @@
 import { useLocation, useNavigate, Outlet } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import {
-  Bell,
-  Building2,
-  CalendarDays,
   CircleHelp,
-  FileText,
-  LayoutDashboard,
   LogOut,
-  MessageCircle,
-  Settings,
-  Users,
-  WalletCards,
-  Wrench,
 } from 'lucide-react'
 import PageTransition from './PageTransition'
 import { useAuth } from '../contexts/AuthContext'
+import { buildNavItems, resolveActivePage } from './NavigationConfig'
+import NotificationDropdown from './NotificationDropdown'
 import './AdminLayout.css'
+
+function getTopbarTitle(activePage) {
+  const titles = {
+    dashboard: 'Admin Dashboard',
+    users: 'User Management',
+    properties: 'Property Management',
+    bookings: 'Booking Management',
+    finance: 'Finance Console',
+    maintenance: 'Maintenance Center',
+    messages: 'Admin Messages',
+    reports: 'Reports & Audit',
+    settings: 'Admin Settings',
+    help: 'Admin Help Center',
+  }
+  return titles[activePage] || 'Admin Dashboard'
+}
 
 function AdminLayout() {
   const navigate = useNavigate()
   const location = useLocation()
   const { user, logout } = useAuth()
 
-  const navItems = [
-    { key: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, path: '/admin' },
-    { key: 'users', label: 'Users', icon: Users, path: '/admin/users' },
-    { key: 'properties', label: 'Properties', icon: Building2, path: '/admin/properties' },
-    { key: 'bookings', label: 'Bookings', icon: CalendarDays, path: '/admin/bookings' },
-    { key: 'finance', label: 'Finance', icon: WalletCards, path: '/admin/finance' },
-    { key: 'maintenance', label: 'Maintenance', icon: Wrench, path: '/admin/maintenance' },
-    { key: 'messages', label: 'Messages', icon: MessageCircle, path: '/admin/messages' },
-    { key: 'reports', label: 'Reports', icon: FileText, path: '/admin/reports' },
-    { key: 'settings', label: 'Settings', icon: Settings, path: '/admin/settings' },
-  ]
+  const role = user?.role || 'Admin'
+  const navItems = buildNavItems(role)
+  const activePage = resolveActivePage(location.pathname, role)
+
+  const initials = user
+    ? (user.full_name || user.name || 'AS').split(' ').map((w) => w[0]).join('').toUpperCase().slice(0, 2)
+    : 'AS'
 
   function safeNavigate(path) {
     if (location.pathname !== path) navigate(path)
@@ -42,44 +46,6 @@ function AdminLayout() {
   function handleLogout() {
     logout(navigate)
   }
-
-  function getActivePage() {
-    if (location.pathname === '/admin' || location.pathname === '/') return 'dashboard'
-    if (location.pathname.includes('/admin/users')) return 'users'
-    if (location.pathname.includes('/admin/properties')) return 'properties'
-    if (location.pathname.includes('/admin/bookings')) return 'bookings'
-    if (location.pathname.includes('/admin/finance')) return 'finance'
-    if (location.pathname.includes('/admin/maintenance')) return 'maintenance'
-    if (location.pathname.includes('/admin/messages')) return 'messages'
-    if (location.pathname.includes('/admin/reports')) return 'reports'
-    if (location.pathname.includes('/admin/settings')) return 'settings'
-    if (location.pathname.includes('/admin/help')) return 'help'
-    return 'dashboard'
-  }
-
-  function getTopbarTitle() {
-    const active = getActivePage()
-    const titles = {
-      dashboard: 'Admin Dashboard',
-      users: 'User Management',
-      properties: 'Property Management',
-      bookings: 'Booking Management',
-      finance: 'Finance Console',
-      maintenance: 'Maintenance Center',
-      messages: 'Admin Messages',
-      reports: 'Reports & Audit',
-      settings: 'Admin Settings',
-      help: 'Admin Help Center',
-    }
-    return titles[active]
-  }
-
-  const activePage = getActivePage()
-
-  /* Extract initials from user */
-  const initials = user
-    ? `${(user.firstName || user.name || '?')[0]}${(user.lastName || '')[0] || ''}`.toUpperCase()
-    : 'AS'
 
   return (
     <main className="admin-layout-shell">
@@ -132,19 +98,11 @@ function AdminLayout() {
           <div className="admin-layout-brand" onClick={() => safeNavigate('/admin')}>
             <h2>PRMS</h2>
             <span></span>
-            <p>{getTopbarTitle()}</p>
+            <p>{getTopbarTitle(activePage)}</p>
           </div>
 
           <div className="admin-layout-top-actions">
-            <motion.button
-              type="button"
-              className="admin-layout-icon-btn"
-              title="Notifications"
-              whileHover={{ scale: 1.1, rotate: -6 }}
-              whileTap={{ scale: 0.92 }}
-            >
-              <Bell size={22} />
-            </motion.button>
+            <NotificationDropdown />
 
             <motion.div className="admin-layout-avatar" whileHover={{ scale: 1.08 }}>
               {initials}
