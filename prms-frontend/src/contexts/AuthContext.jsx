@@ -1,9 +1,7 @@
 import { createContext, useContext, useReducer, useEffect, useCallback } from 'react';
 import { authApi, getApiError } from '../api';
 
-/* ------------------------------------------------------------------ */
-/*  Actions                                                        */
-/* ------------------------------------------------------------------ */
+/* ------ Actions ------ */
 
 const ACTIONS = {
   SET_LOADING: 'SET_LOADING',
@@ -13,9 +11,7 @@ const ACTIONS = {
   LOGOUT: 'LOGOUT',
 };
 
-/* ------------------------------------------------------------------ */
-/*  Reducer                                                        */
-/* ------------------------------------------------------------------ */
+/* ------ Reducer ------ */
 
 const initialState = {
   loading: true,
@@ -40,18 +36,32 @@ function authReducer(state, action) {
   }
 }
 
-/* ------------------------------------------------------------------ */
-/*  Context                                                        */
-/* ------------------------------------------------------------------ */
+/* ------ Context ------ */
 
 const AuthContext = createContext(null);
 
 function AuthProvider({ children }) {
   const [state, dispatch] = useReducer(authReducer, initialState);
 
-  /* ------------------------------------------------------------------ */
-  /*  Register                                                         */
-  /* ------------------------------------------------------------------ */
+  /* ------ Normalize user object ------ */
+
+  function normalizeUser(raw) {
+    // Login returns: data.data.user (successResponse wraps in {data})
+    // getMe returns: data.data (successResponse wraps in {data})
+    // Both backend endpoints now return flat {id, email, full_name, role, ...}
+    const user = raw?.data?.user || raw?.data || raw;
+    if (!user) return null;
+    return {
+      id: user.id,
+      email: user.email,
+      full_name: user.full_name,
+      phone: user.phone,
+      profile_img_url: user.profile_img_url,
+      role: user.role || 'Tenant',
+    };
+  }
+
+  /* ------ Register ------ */
 
   const register = useCallback(
     async (data, navigate) => {
@@ -70,9 +80,7 @@ function AuthProvider({ children }) {
     []
   );
 
-  /* ------------------------------------------------------------------ */
-  /*  Login                                                            */
-  /* ------------------------------------------------------------------ */
+  /* ------ Login ------ */
 
   const login = useCallback(
     async ({ email, password }, navigate) => {
@@ -80,34 +88,23 @@ function AuthProvider({ children }) {
       dispatch({ type: ACTIONS.CLEAR_ERROR });
       try {
         const { data } = await authApi.login({ email, password });
-        
-        const accessToken =
-        data?.data?.tokens?.accessToken ||
-        data?.accessToken ||
-        data?.token;
-        
-        const refreshToken =
-        data?.data?.tokens?.refreshToken ||
-        data?.refreshToken ||
-        data?.refresh_token;
 
-        localStorage.setItem('accessToken', accessToken);
-        if (refreshToken) localStorage.setItem('refreshToken', refreshToken);
+        // Store tokens — successResponse wraps in {success, message, data: {user, tokens}}
+        const tokens = data?.data?.tokens;
+        if (tokens) {
+          localStorage.setItem('accessToken', tokens.accessToken);
+          localStorage.setItem('refreshToken', tokens.refreshToken);
+        }
 
-        /* Fetch current user */
+        // Fetch current user with normalized shape
         const { data: meData } = await authApi.getMe();
-        
-        const user =
-        meData?.data?.user ||
-        meData?.user ||
-        meData;
+        const user = normalizeUser(meData);
 
         dispatch({ type: ACTIONS.SET_USER, payload: user });
 
-        /* Redirect based on role */
-        if (navigate) {
+        // Redirect based on role — NO localStorage dashboard path
+        if (navigate && user) {
           const path = roleToPath(user.role);
-          localStorage.setItem('prmsDashboardPath', path);
           navigate(path);
         }
 
@@ -121,33 +118,69 @@ function AuthProvider({ children }) {
     []
   );
 
-  /* ------------------------------------------------------------------ */
-  /*  Logout                                                           */
-  /* ------------------------------------------------------------------ */
+  /* ------ Google Login (AUTH-009) ------ */
+
+  const googleLogin = useCallback(
+    async (idToken, navigate) => {
+      dispatch({ type: ACTIONS.SET_LOADING, payload: true });
+      dispatch({ type: ACTIONS.CLEAR_ERROR });
+      try {
+        const { data } = await authApi.googleLogin(idToken);
+
+        // Store tokens
+        const tokens = data?.data?.tokens || data?.tokens;
+        if (tokens) {
+          localStorage.setItem('accessToken', tokens.accessToken);
+          localStorage.setItem('refreshToken', tokens.refreshToken);
+        }
+
+        // Fetch current user with normalized shape
+        const { data: meData } = await authApi.getMe();
+        const user = normalizeUser(meData);
+
+        dispatch({ type: ACTIONS.SET_USER, payload: user });
+
+        if (navigate && user) {
+          const path = roleToPath(user.role);
+          navigate(path);
+        }
+
+        return { success: true, user };
+      } catch (err) {
+        const msg = getApiError(err);
+        dispatch({ type: ACTIONS.SET_ERROR, payload: msg });
+        return { success: false, error: msg };
+      }
+    },
+    []
+  );
+
+  /* ------ Logout (AUTH-008) ------ */
 
   const logout = useCallback(
     async (navigate) => {
       try {
         await authApi.logout();
       } catch {
-        /* best-effort — clear locally regardless */
+        /* best-effort */
       }
+      // Clear ALL auth-related localStorage
       localStorage.removeItem('accessToken');
       localStorage.removeItem('refreshToken');
-      if (navigate) navigate('/login');
+      localStorage.removeItem('prmsDashboardPath');
+      localStorage.removeItem('prmsSelectedRole');
+      navigate?.('/login');
       dispatch({ type: ACTIONS.LOGOUT });
     },
     []
   );
 
-  /* ------------------------------------------------------------------ */
-  /*  Update profile                                                   */
-  /* ------------------------------------------------------------------ */
+  /* ------ Update profile ------ */
 
   const updateProfile = useCallback(async (data) => {
     try {
       const { data: res } = await authApi.updateMe(data);
-      const updated = res.user || res;
+      const updated = normalizeUser(res);
       dispatch({ type: ACTIONS.SET_USER, payload: updated });
       return { success: true, user: updated };
     } catch (err) {
@@ -157,9 +190,7 @@ function AuthProvider({ children }) {
     }
   }, []);
 
-  /* ------------------------------------------------------------------ */
-  /*  Hydration on mount — restore session from localStorage           */
-  /* ------------------------------------------------------------------ */
+  /* ------ Hydration — restore session (AUTH-003/004) ------ */
 
   useEffect(() => {
     if (!localStorage.getItem('accessToken')) {
@@ -170,7 +201,12 @@ function AuthProvider({ children }) {
     authApi
       .getMe()
       .then(({ data }) => {
-        dispatch({ type: ACTIONS.SET_USER, payload: data.user || data });
+        const user = normalizeUser(data);
+        if (user) {
+          dispatch({ type: ACTIONS.SET_USER, payload: user });
+        } else {
+          dispatch({ type: ACTIONS.SET_LOADING, payload: false });
+        }
       })
       .catch(() => {
         localStorage.removeItem('accessToken');
@@ -179,9 +215,7 @@ function AuthProvider({ children }) {
       });
   }, []);
 
-  /* ------------------------------------------------------------------ */
-  /*  Value                                                            */
-  /* ------------------------------------------------------------------ */
+  /* ------ Value ------ */
 
   const value = {
     loading: state.loading,
@@ -190,6 +224,7 @@ function AuthProvider({ children }) {
     isAuthenticated: !!state.user,
     register,
     login,
+    googleLogin,
     logout,
     updateProfile,
     clearError: () => dispatch({ type: ACTIONS.CLEAR_ERROR }),
@@ -198,9 +233,7 @@ function AuthProvider({ children }) {
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
-/* ------------------------------------------------------------------ */
-/*  Hook                                                           */
-/* ------------------------------------------------------------------ */
+/* ------ Hook ------ */
 
 function useAuth() {
   const ctx = useContext(AuthContext);
@@ -208,17 +241,15 @@ function useAuth() {
   return ctx;
 }
 
-/* ------------------------------------------------------------------ */
-/*  Helpers                                                        */
-/* ------------------------------------------------------------------ */
+/* ------ Helpers ------ */
 
 function roleToPath(role) {
-  if (!role) return '/admin';
+  if (!role) return '/login';
   const lower = role.toLowerCase();
   if (lower.includes('landlord')) return '/landlord';
   if (lower.includes('tenant')) return '/tenant';
-  if (lower.includes('admin')) return '/';
-  return '/admin';
+  if (lower.includes('admin')) return '/admin';
+  return '/login';
 }
 
-export { AuthProvider, useAuth, AuthContext };
+export { AuthProvider, useAuth, AuthContext, roleToPath };

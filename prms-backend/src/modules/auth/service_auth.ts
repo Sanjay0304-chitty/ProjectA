@@ -4,7 +4,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { prisma } from '../../db';
 import { env } from '../../config';
 
-export async function registerUser(email: string, password: string, full_name?: string, phone?: string) {
+export async function registerUser(email: string, password: string, full_name?: string, phone?: string, role?: string) {
   const existing = await prisma.user.findUnique({ where: { email } });
   if (existing) throw new Error('Email already registered');
 
@@ -20,7 +20,7 @@ export async function registerUser(email: string, password: string, full_name?: 
       phone,
       UserRole: {
         create: {
-          role: { connect: { name: 'Tenant' } }
+          role: { connect: { name: role || 'Tenant' } }
         }
       }
     },

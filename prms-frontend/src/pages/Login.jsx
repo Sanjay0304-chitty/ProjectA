@@ -3,10 +3,11 @@ import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Building2, Eye, EyeOff, LockKeyhole, LogIn, Mail } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
+import { signInWithGoogle } from '../firebase';
 
 function Login() {
   const navigate = useNavigate();
-  const { login, error, clearError, loading } = useAuth();
+  const { login, googleLogin, error, clearError, loading } = useAuth();
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -29,6 +30,17 @@ function Login() {
     }
 
     setSubmitting(false);
+  }
+
+  /* AUTH-009: Google OAuth login handler */
+  async function handleGoogleLogin() {
+    clearError();
+    try {
+      const googleAuth = await signInWithGoogle();
+      await googleLogin(googleAuth.idToken, navigate);
+    } catch (err) {
+      console.error('Google login failed', err);
+    }
   }
 
   return (
@@ -238,12 +250,13 @@ function Login() {
               animate={{ y: 0, opacity: 1 }}
               transition={{ delay: 0.88, duration: 0.35 }}
             >
-              <motion.button type="button" whileHover={{ y: -2 }} whileTap={{ scale: 0.97 }}>
+              <motion.button
+                type="button"
+                onClick={handleGoogleLogin}
+                whileHover={{ y: -2 }}
+                whileTap={{ scale: 0.97 }}
+              >
                 Google
-              </motion.button>
-
-              <motion.button type="button" whileHover={{ y: -2 }} whileTap={{ scale: 0.97 }}>
-                Apple
               </motion.button>
             </motion.div>
 

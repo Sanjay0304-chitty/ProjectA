@@ -27,6 +27,9 @@ function Register() {
     confirmPassword: '',
   });
 
+  /* AUTH-002: Read role from RoleSelection, fallback to Tenant */
+  const selectedRole = localStorage.getItem('prmsSelectedRole') || 'Tenant';
+
   const [showPassword, setShowPassword] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
@@ -52,6 +55,7 @@ function Register() {
         email: formData.email,
         phone: formData.phone,
         password: formData.password,
+        role: selectedRole,
       },
       navigate
     );

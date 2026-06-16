@@ -3,17 +3,20 @@ import { apiClient } from './ApiClient';
 /*  Auth endpoints  */
 
 export const authApi = {
-  register({ email, password, full_name, phone }) {
+  register({ email, password, full_name, phone, role }) {
     return apiClient.post('/auth/register', {
       email,
       password,
       full_name,
       phone,
+      role,
     });
   },
 
-  login({ email, password }) {
-    return apiClient.post('/auth/login', { email, password });
+  login: ({ email, password }) => apiClient.post('/auth/login', { email, password }),
+
+  googleLogin(idToken) {
+    return apiClient.post('/auth/google', { idToken });
   },
 
   refresh({ refreshToken }) {

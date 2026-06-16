@@ -39,10 +39,11 @@ function RoleSelection() {
 
   function handleContinue() {
     const role = roles.find((item) => item.key === selectedRole)
-    const path = role?.path || '/admin'
+    const title = role?.title || 'Tenant'
 
-    localStorage.setItem('prmsDashboardPath', path)
-    navigate(path)
+    /* Save selected role title (capitalized) so Register can use it */
+    localStorage.setItem('prmsSelectedRole', title)
+    navigate('/register')
   }
 
   return (

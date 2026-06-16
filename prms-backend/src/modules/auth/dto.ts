@@ -5,6 +5,7 @@ export const registerBody = [
   body('password').isLength({ min: 6 }).withMessage('Password must be at least 6 characters'),
   body('full_name').optional().isString(),
   body('phone').optional().isString(),
+  body('role').optional().isIn(['Admin', 'Landlord', 'Tenant']).withMessage('Valid role required'),
 ];
 
 export const loginBody = [

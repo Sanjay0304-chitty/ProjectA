@@ -1,30 +1,30 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { ProtectedRoute, PublicRoute } from './components/ProtectedRoute';
-import { Navigate } from 'react-router-dom';
 import PageTransition from './components/PageTransition';
 import PublicPageTransition from './components/PublicPageTransition';
 
-/* ── Public pages ────────────────────────────────────── */
+/*  Public pages  */
 import Login from './pages/Login';
 import Register from './pages/Register';
+import RoleSelection from './pages/RoleSelection';
 
-/* ── Admin ───────────────────────────────────────────── */
+/*  Admin  */
 import AdminLayout from './components/AdminLayout';
 import AdminDashboard from './pages/AdminDashboard';
 import AdminSimplePage from './pages/AdminSimplePage';
 
-/* ── Landlord ────────────────────────────────────────── */
+/*  Landlord  */
 import LandlordLayout from './components/LandlordLayout';
 import LandlordDashboard from './pages/LandlordDashboard';
 import LandlordSimplePage from './pages/LandlordSimplePage';
 
-/* ── Tenant ──────────────────────────────────────────── */
+/*  Tenant  */
 import TenantLayout from './components/TenantLayout';
 import TenantDashboard from './pages/TenantDashboard';
 import TenantSimplePage from './pages/TenantSimplePage';
 
-/* ── Shared ──────────────────────────────────────────── */
+/*  Shared  */
 import Properties from './pages/Properties';
 import Settings from './pages/Settings';
 
@@ -43,7 +43,19 @@ function AppRoutes() {
 
   return (
     <Routes>
-      <Route path="/" element={<Navigate to="/admin" replace />} />
+      <Route path="/" element={<Navigate to="/login" replace />} />
+
+      {/*  Public routes (auth-001: RoleSelection -> Register -> Login)  */}
+      <Route
+        path="/role-selection"
+        element={
+          <PublicRoute>
+            <PublicPageTransition>
+              <RoleSelection />
+            </PublicPageTransition>
+          </PublicRoute>
+        }
+      />
       <Route
         path="/login"
         element={
@@ -65,11 +77,12 @@ function AppRoutes() {
         }
       />
 
-      {/* ── Admin ──────────────────────────────────────── */}
-      
-      <Route path="/admin" element={<ProtectedRoute><AdminLayout /></ProtectedRoute>}>
+      {/*  Admin routes (AUTH-006: role-protected)  */}
+      <Route
+        path="/admin"
+        element={<ProtectedRoute allowedRoles={['Admin']}><AdminLayout /></ProtectedRoute>}
+      >
         <Route index element={<AdminDashboard />} />
-        <Route path="index" element={<AdminDashboard />} />
         <Route path="dashboard" element={<AdminDashboard />} />
         <Route path="users" element={<AdminSimplePage label="User Management" />} />
         <Route path="properties" element={<Properties />} />
@@ -82,11 +95,11 @@ function AppRoutes() {
         <Route path="help" element={<AdminSimplePage label="Admin Help Center" />} />
       </Route>
 
-      {/* ── Landlord ──────────────────────────────────── */}
+      {/*  Landlord routes (AUTH-006: role-protected)  */}
       <Route
         path="/landlord/*"
         element={
-          <ProtectedRoute>
+          <ProtectedRoute allowedRoles={['Landlord']}>
             <LandlordLayout />
           </ProtectedRoute>
         }
@@ -101,11 +114,11 @@ function AppRoutes() {
         <Route path="help" element={<LandlordSimplePage label="Help Center" />} />
       </Route>
 
-      {/* ── Tenant ──────────────────────────────────────── */}
+      {/*  Tenant routes (AUTH-006: role-protected)  */}
       <Route
         path="/tenant/*"
         element={
-          <ProtectedRoute>
+          <ProtectedRoute allowedRoles={['Tenant']}>
             <TenantLayout />
           </ProtectedRoute>
         }
@@ -120,8 +133,8 @@ function AppRoutes() {
         <Route path="help" element={<TenantSimplePage label="Help Center" />} />
       </Route>
 
-      {/* ── Fallback ──────────────────────────────────── */}
-      <Route path="*" element={<Login />} />
+      {/*  Fallback  */}
+      <Route path="*" element={<Navigate to="/login" replace />} />
     </Routes>
   );
 }
